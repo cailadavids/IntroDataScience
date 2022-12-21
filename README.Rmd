@@ -1,30 +1,301 @@
 ---
-title: "Data Science Prac"
-author: "Caila Davids"
-date: "2022-09-28"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
+#                                 The Link Between Music Genre Preferences and Mental Health Issues
+\vspace{12pt}
+## Data Science Practical
+\vspace{12pt}
+\vspace{12pt}
+\vspace{12pt}
+\vspace{12pt}
+**Caila Davids**
+\newline
+\vspace{12pt}
+**22.12.2022** 
+ 
+# Abstract
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+ This study is looking into the potential connections between people's self-reported mental health affections and the genre of music they listen to. How frequently people choose to listen to music is also of interest here. Four mental health conditions are reported: Insomnia, Depression, Anxiety and Obsessive Compulsive Disorder (OCD).
+
+ \vspace{12pt}
+![](Teaphoto.jpg)
+\newpage
+
+**1) Introduction**
+
+
+Listening to music is something we all enjoy. People often try to look for help in music so I was interested to know if there is a connection between what style of music people listen to and signs of certain mental health issues. 
+
+In the data available, four possible mental health issues were available : Insomnia, Depression, Anxiety and OCD. Due to the nature of these response variables, I am also interested in seeing if the frequency with which people listen to their favorite genre has any effect on these conditions. 
+
+My initial hypotesis is that there should be differences in levels of these mental health issues that are in some way related to the preferred music genre, either because people might listen to music that reflects their mental state or, on the contrary, try to use more upbeat music as a way to alleviate their symptoms. Furthermore, I initially expected to see an increase in Insomnia, Depression, Anxiety and OCD with age, since these conditions tend to worsen with time in most cases. 
+
+I begin by describing the data I used, along with some graphs for data visualisation and a discussion about data wrangling. Here I talk about the data cleaning and transformations that I performed to have everything in a format ready for the modelling part. I then discuss the linear regression models I ran to see which of the variables in my dataset. In this practical I also show parts of the code along with some of the relevant output.
+
+In my research I find some correlation between the mentioned conditions and the prefered music genre or the frequencies with which people listen to certain music styles, as well as an unexpected negative correlation between age and displayed symptoms.
+\vspace{12pt}
+
+\newpage
+
+```{r fig.show='hide', message=FALSE, , echo=FALSE, results='hide'}
+#install.packages("mltools")
+#install.packages("tidyverse")
+#install.packages("devtools")
+library("mltools")
+library("data.table")
+library("broom")
+library("ggpubr")
+library(devtools)
+library(dplyr)
+#install_github("vqv/ggbiplot")
+
+
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+**2) Data**
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+
+ Data consists of the answers of 737 people to a survey regarding their music preferences and mental health conditions. In total there are 32 columns in the dataset. The values in the dataset that were of interest are:
+
+* Age
++ Number of listening hours
++ Yes/no questions regarding music style preferences
++ Beats per minute (BPM)
++ Favourite genre
++ The frequency with which they listen to a certain genre ( Never- Frequently)
++ Perceived effects of listening to music on mental state (Worsen, No effect, Improved)
++ Self reported levels of certain mental health affections (Scale 1-10)
+\vspace{12pt}
+
+
+
+```{r fig.height=6, fig.show='hide', fig.width=6, message=FALSE, include=FALSE}
+data_raw <- read.csv('mxmh_survey_results.csv')
+cols_to_remove = c("Timestamp", "Permissions", "Primary.streaming.service")
+data <- data_raw[, !(names(data_raw) %in% cols_to_remove)]
+head(data,1)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, , echo=FALSE, results='hide', message=FALSE, fig.show='hide'}
+str(data)
+summary(data)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r, , echo=FALSE, results='hide', message=FALSE, fig.show='hide'}
+sapply(data, unique)
+
+```
+
+
+
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, out.width="400px", results='hide'}
+library("ggplot2")
+ggplot(data, aes(x = Insomnia, y = Hours.per.day)) + geom_point() + geom_smooth(method=lm) + ylim(0, 12)
+```
+
+
+Due to the large number of variables and the available space here, I chose to present a sample plot that shows the correlation between the levels of *insomnia* and number of listening hours per day. Generally,these plots were not very easy to interpret but better conclusions can be drawn from the models I will present later. In the case of the insomnia plot, the results were to be expected so I was genuinely relieved to see that the data makes reasonable sense.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, out.width = "250px", echo=FALSE, results='hide'}
+library("ggplot2")
+ggplot(data, aes(x = Age, y = Depression)) + geom_point() + geom_smooth(method=lm) + ylim(0, 12)
+ggplot(data, aes(x = Age, y = Anxiety)) + geom_point() + geom_smooth(method=lm) + ylim(0, 12)
+
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, out.width = "250px", echo=FALSE, results='hide'}
+library("ggplot2")
+ggplot(data, aes(x = Age, y = OCD)) + geom_point() + geom_smooth(method=lm) + ylim(0, 12)
+ggplot(data, aes(x = Age, y = Insomnia)) + geom_point() + geom_smooth(method=lm) + ylim(0, 12)
+
+```
+
+Other plots that show more visible correlations are those involving **age** when trying to explain mental health conditions. From the answers of the people taking the survey, in the case of depression, anxiety and OCD, there seems to be a negative correlation between the age of the participant and the levels and the extent to which the various conditions are experienced. However, in the case of *insomnia* there seems to be no visible difference in levels shown between younger and older people. 
+\newline
+
+Looking at the data and preliminary results, some comments need to be made. For one, the sample is skewed towards the younger population, perhaps due to way the survey was taken (i.e. the survey platform and location). Nonetheless, the trends are the same even for people under 50 years old where we have an even distribution of ages and lots of data points. Furthermore, I can't help but notice that there are considerably more high values of depression, anxiety, OCD and insomnia signaled by the younger population, showing that these mental health issues are more often not properly addressed on time and this also goes against my initial hypotesis. The models I run should clarify these results further.
+\newline
+
+The fact that as time goes on people report on average lower levels of certain conditions is less counter-intuitive than it seems. Most likely, numbers could indicate either that people get better at dealing with their condition or they have gone through more difficult times in the past so it is less likely that their current state exceeds their worst. Another study that examines the evolution of these self-reported scores would be interesting. Assuming this age based trend is significant, a patient that consistently reports higher levels of anxiety, depression etc as time goes on could potentially be at higher risk.
+\newline
+
+Bearing the above graphs in mind, the general trend we would expect is that certain symptoms such as **Depression**, **Anxiety** and **Insomnia** are something one would expect to increase as we progress in our life cycles and endure the highs and lows that come with experience in years, usually as we get older our problems seem to become more serious as our lives become more complex. From a cognitive science  perspective as we progress in age  chances of insomnia, depression and anxiety should increase if we consider it with that logic. It is this apparent contradiction between common sense that peaked my interest.
+
+
+
+ 
+![](insomnia.png)
+
+
+
+
+Lastly, a plot that I found humouring depicts the insomnia levels in people whose favourite genre is rap and people whose favourite genre is not rap. Somewhat surprisingly, lower levels of insomnia were shown by those who prefer listening to rap music but the low number of data points can be a cause for misleading results.
+
+
+
+
+
+## Data Wrangling
+
+
+
+In order to transform the data from its original form into a format ready for modelling, I first transform the factor (categorical) variables that either have an implied ordering or are binary, to numbers. In the case of music effects, the values I map to are -1 for "worsen", 0 for "stays the same" and 1 for "improve". Below is the code that does these transformations.
+ \vspace{12pt}
+
+```{r echo=TRUE, fig.show='hide', message=FALSE, , results='hide'}
+resp.map <- c("Never"=0, "Rarely"=1, "Sometimes"=2, "Very frequently"=3)
+cols <- names(select(data, matches("^Frequency.*")))
+data[cols] <- sapply(data[cols], function(x) resp.map[x])
+bin.map <- c("No"= 0 , "Yes"= 1)
+cols <- c("While.working", "Instrumentalist", "Composer", "Exploratory", "Foreign.languages")
+data[cols] <- sapply(data[cols], function(x) bin.map[x])
+impact.map <- c("Worsen"=-1, "No effect"=0, "Improve"=1)
+data$Music.effects <- impact.map[data$Music.effects]
+```
+ \vspace{12pt}
+Favourite genre is a categorical variable with no implied ordering, so I use a "one hot encoder" to split up the column into separate columns corresponding to each different value in the original column.
+ \vspace{12pt}
+```{r echo=TRUE, fig.show='hide', message=FALSE, warning=FALSE, , echo=TRUE, results='hide'}
+
+data$Fav.genre <- as.factor(data$Fav.genre)
+data <- one_hot(as.data.table(data))
+```
+ \vspace{12pt}
+
+I omit BPM because it has a large number of missing values and then remove all rows that have at least one missing value.
+ \vspace{12pt}
+```{r echo=TRUE, fig.show='hide', message=FALSE, results='hide'}
+data <- select(data, -BPM)
+data <- na.omit(data)
+```
+ \vspace{12pt}
+Now I scale all columns with non binary values to have mean 0 and standard deviation 1.
+ \vspace{12pt}
+```{r echo=TRUE, fig.show='hide', message=FALSE, , echo=TRUE, results='hide'}
+bin.cols <- names(which(colSums((data==0 | data==1))==nrow(data)))
+`%ni%` <- Negate(`%in%`)
+to_scale <- names(data)[names(data) %ni% bin.cols]
+data_scaled <- data
+data_scaled <- data_scaled %>% mutate_at(to_scale, function(x) scale(x)[,1])
+```
+ \vspace{12pt}
+I split up the target variables for the models from the features used to model them and compute a correlation table for all the variables.
+ \vspace{12pt}
+```{r fig.show='hide', message=FALSE, , echo=TRUE, results='hide'}
+target_df <- select(data_scaled, c('Anxiety', 'Depression', 'Insomnia', 'OCD'))
+features_df <- select(data_scaled, -c('Anxiety', 'Depression', 'Insomnia', 'OCD'))
+```
+ \vspace{12pt}
+```{r, , echo=FALSE, results='hide', message=FALSE, fig.show='hide'}
+cor(features_df)
+```
+\newpage
+**3) Modelling**
+
+For the modelling part, I ran linear regressions using the scaled and transformed values of the input variables, one by one, to predict my targets : anxiety, insomnia, depression and OCD scores.
+
+ I present, in turns the summary outputs of the models for each individual condition and discuss the results. The first chunk of code runs the models for depression. Age and the frequency of country music listening were found to be significant with a negative sign, and the frequency of metal music was also significal but this time positively correlated with depression values. These results regarding the music genres are somewhat intuitive and suggest that people tend to listen to music that somewhat matches their mood.
+\vspace{12pt}
+
+
+```{r echo=TRUE, fig.show='hide', message=FALSE, }
+depression_dataset <- features_df
+depression_dataset$target <- target_df$Depression
+depression_model <- lm(target ~ ., data=depression_dataset)
+summary(depression_model)
+```
+
+\vspace{12pt}
+
+In the case of anxiety, age is again very significant with a negative coefficient, meaning younger people show higher levels of anxiety than older people, as well as music effects, showing that people who feel have been helped by listening to music tend to have higher levels of anxiety overall than people who feel there has been no improvement or a worsening of their state. 
+
+\vspace{12pt}
+
+```{r echo=TRUE, fig.show='hide', message=FALSE}
+
+anxiety_dataset <- features_df
+anxiety_dataset$target <- target_df$Anxiety
+anxiety_model <- lm(target ~ ., data=anxiety_dataset)
+summary(anxiety_model)
+
+```
+\vspace{12pt}
+For OCD, age keeps the same significance and sign, listening hours is positively linked to OCD levels (somewhat unsurprisingly). Lastly, people who prefer EDM music are also more prone to showing higher OCD scores.
+
+\vspace{12pt}
+```{r echo=TRUE, fig.show='hide', message=FALSE}
+OCD_dataset <- features_df
+OCD_dataset$target <- target_df$OCD
+OCD_model <- lm(target ~ ., data=OCD_dataset)
+summary(OCD_model)
+```
+\vspace{12pt}
+Lastly, another sensible result is that hours per day are significant and positively linked to insomnia, however it does seem that people who enjoy listening to rap music are less likely to exhibit lack of sleep.
+
+\vspace{12pt}
+```{r echo=TRUE, fig.show='hide', message=FALSE}
+Insomnia_dataset <- features_df
+Insomnia_dataset$target <- target_df$Insomnia
+Insomnia_model <- lm(target ~ ., data=Insomnia_dataset)
+summary(Insomnia_model)
+```
+\vspace{12pt}
+
+\newpage
+
+**5) Conclusion and Further Research**
+
+In conclusion, I found that there is some connection between people's music preferences and listening patterns and their mental health status. Contrary to my initial hypotesis, however, a big negative correlation between **Age** and **Depression**, **OCD** and **Anxiety** was found, but the nature of the data can explain these results. I believe that a larger dataset with more surveyed people would make this analysis more clear and accurate, and would allow an analysis split on more subgroups. An example of such a split is shown in the wordcloud below, perhaps with even more genres and observations could be clustered and analysed based on these styles of music.
+\newline
+![](Wordcloud.png)
+
+
+
+
+
+
+
+
+
+```{r, , echo=FALSE, results='hide', message=FALSE, fig.show='hide'}
+features.pca <- prcomp(features_df)
+summary(features.pca)
+```
+
+```{r, , echo=FALSE, results='hide', message=FALSE, fig.show='hide'}
+library("ggbiplot")
+ggbiplot(features.pca, choices = 1:2, alpha = 0.1)
+```
+
+```{r message=FALSE, include=FALSE}
+#PCA plot but I am not sure how to interpret these exactly so I leave them out.
+features_df_extended <- cbind(features_df, features.pca$x[, 1:6])
+df <- select(features_df_extended, c("PC1", "PC2", "PC3", "Age", "Exploratory", "Music.effects", "Fav.genre_Lofi", "Frequency..Country.", "Frequency..Metal.", "Hours.per.day", "Frequency..EDM.", "Fav.genre_Rap", "Frequency..Classical."))
+cor(df)
+```
+\newpage
+# References 
+
+
+1) Music Can Be a Great Mood Booster-Sarah Elizabeth Adler 2020 https://www.aarp.org/health/brain-health/info-2020/music-mental-health.html
+ 
+2) The effects of playing music on mental health outcomes - L Wesseldijk, F. Ullen, M. Mosing, 2019 https://doi.org/10.1038/s41598-019-49099-9 
+
+3) Depression Symptoms Relationship With Music Use: Investigating the Role of Trait Affect, Musical Ability, Music Preferences - S. Kanagala, T. Schafer, A. Gabinska 2021
+https://journals.sagepub.com/doi/full/10.1177/20592043211057217
+
+4) Linear Model - https://stats.stackexchange.com/questions/87105/simple-linear-regression-in-r
+
+5) PCA -  https://stackoverflow.com/questions/42846460/principal-component-analysis-pca-in-r
+
+
+
+
+
